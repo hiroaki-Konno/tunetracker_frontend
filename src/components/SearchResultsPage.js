@@ -8,17 +8,17 @@ import { useSearchParams } from 'react-router-dom';
 
 import { getHistory } from './utils/historyUtils';
 
-const fetchSearchResults = async (page, title, artist, genre) => {
+const fetchSearchResults = async (page, title, composer, instrument) => {
   console.log('fetchSearchResults called with:', {
     page,
     title,
-    artist,
-    genre,
+    composer,
+    instrument,
   }); // Debug print
   try {
-    const params = new URLSearchParams({ title, artist, genre, page });
+    const params = new URLSearchParams({ title, composer, instrument, page });
     const response = await axios.get(
-      `http://localhost:8000/api/data/?${params.toString()}`,
+      `http://localhost:8000/api/scores/?${params.toString()}`,
     );
     return response.data;
   } catch (error) {
@@ -73,8 +73,8 @@ const SearchResultsPage = () => {
 
     const fetchData = async () => {
       const title = searchParams.get('title') || '';
-      const artist = searchParams.get('artist') || '';
-      const genre = searchParams.get('genre') || '';
+      const composer = searchParams.get('composer') || '';
+      const instrument = searchParams.get('instrument') || '';
       const page = searchParams.get('page') || '';
 
       // 検索条件が全て空の場合はAPIリクエストをスキップ
@@ -89,16 +89,16 @@ const SearchResultsPage = () => {
         console.log(
           'Fetching data for title:',
           title,
-          ', artist:',
-          artist,
-          ', genre:',
-          genre,
+          ', composer:',
+          composer,
+          ', instrument:',
+          instrument,
         ); // Debug print
         const results = await fetchSearchResults(
           currentPage,
           title,
-          artist,
-          genre,
+          composer,
+          instrument,
         );
         setSearchResults(results);
         localStorage.setItem('searchResults', JSON.stringify(results)); // キャッシュ
@@ -115,17 +115,22 @@ const SearchResultsPage = () => {
 
   // 検索の実行
   const handleSearch = useCallback(
-    async (title, artist, genre) => {
+    async (title, composer, instrument) => {
       setLoading(true);
       setCurrentPage(1); // 新しい検索では1ページ目にリセット
-      const params = { page: 1, title, artist, genre };
+      const params = { page: 1, title, composer, instrument };
       const filteredParams = Object.fromEntries(
         Object.entries(params).filter(([_, value]) => value !== ''),
       );
       setSearchParams(filteredParams); // URLパラメータを更新
       try {
         console.log('Executing handleSearch with:', filteredParams); // Debug print
-        const results = await fetchSearchResults(1, title, artist, genre);
+        const results = await fetchSearchResults(
+          1,
+          title,
+          composer,
+          instrument,
+        );
         setSearchResults(results);
         localStorage.setItem('searchResults', JSON.stringify(results)); // キャッシュ
       } catch (error) {

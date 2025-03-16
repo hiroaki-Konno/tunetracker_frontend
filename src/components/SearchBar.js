@@ -4,13 +4,13 @@ import { useSearchParams } from 'react-router-dom';
 const SearchBar = ({ handleSearch }) => {
   const [searchParams] = useSearchParams(); // クエリパラメータを取得  const [title, setTitle] = useState('');
   const [title, setTitle] = useState('');
-  const [artist, setArtist] = useState('');
-  const [genre, setGenre] = useState('');
+  const [composer, setComposer] = useState('');
+  const [instrument, setInstrument] = useState('');
 
   useEffect(() => {
     setTitle(searchParams.get('title') || '');
-    setArtist(searchParams.get('artist') || '');
-    setGenre(searchParams.get('genre') || '');
+    setComposer(searchParams.get('composer') || '');
+    setInstrument(searchParams.get('instrument') || '');
   }, [searchParams]);
 
   const onSearch = useCallback(() => {
@@ -18,13 +18,13 @@ const SearchBar = ({ handleSearch }) => {
       'onSearch called with query:',
       'title',
       title,
-      'artist:',
-      artist,
-      'genre:',
-      genre,
+      'composer:',
+      composer,
+      'instrument:',
+      instrument,
     );
-    handleSearch(title, artist, genre);
-  }, [handleSearch, title, artist, genre]);
+    handleSearch(title, composer, instrument);
+  }, [handleSearch, title, composer, instrument]);
 
   return (
     <div className="search-bar">
@@ -36,15 +36,15 @@ const SearchBar = ({ handleSearch }) => {
       />
       <input
         type="text"
-        value={artist}
-        onChange={(e) => setArtist(e.target.value)}
-        placeholder="Artist"
+        value={composer}
+        onChange={(e) => setComposer(e.target.value)}
+        placeholder="Composer"
       />
       <input
         type="text"
-        value={genre}
-        onChange={(e) => setGenre(e.target.value)}
-        placeholder="Genre"
+        value={instrument}
+        onChange={(e) => setInstrument(e.target.value)}
+        placeholder="Instrument"
       />
       <button onClick={onSearch}>検索</button>
     </div>
