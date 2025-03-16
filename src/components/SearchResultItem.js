@@ -1,13 +1,13 @@
 import React from 'react';
 
-const SearchResultItem = ({ result }) => {
+const SearchResultItem = ({ result: item }) => {
   return (
     <div className="search-result-item">
-      <h3>{result.title}</h3>
-      <p>作曲家: {result.artist}</p>
-      <p>ジャンル: {result.genre}</p>
+      <h3>{item.title}</h3>
+      <p>作曲家: {item.artist}</p>
+      <p>ジャンル: {item.genre}</p>
       {/* <p>楽器: {result.genre}</p> */}
-      <a href={`/sheet/${result.id}`}>詳細を見る</a>
+      <a href={`/score?id=${item.id}`}>詳細を見る</a>
     </div>
   );
 };

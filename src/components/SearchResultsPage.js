@@ -6,35 +6,25 @@ import Pagination from './Pagination';
 import LoadingSpinner from './LoadingSpinner';
 import { useSearchParams } from 'react-router-dom';
 
+import { getHistory } from './utils/historyUtils';
+
 const fetchSearchResults = async (page, title, artist, genre) => {
-  console.log(
-    'fetchSearchResults called with query:',
+  console.log('fetchSearchResults called with:', {
+    page,
     title,
     artist,
     genre,
-    'page:',
-    page,
-  );
+  }); // Debug print
   try {
-    const params = new URLSearchParams({ title, artist, genre });
+    const params = new URLSearchParams({ title, artist, genre, page });
     const response = await axios.get(
       `http://localhost:8000/api/data/?${params.toString()}`,
     );
-    // setData(response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching data', error);
     return [];
   }
-  // return [
-  //   {
-  //     id: 1,
-  //     title: 'Sample Sheet 1',
-  //     composer: 'Composer A',
-  //     instrument: 'Piano',
-  //   },
-  //   // 他のデータ...
-  // ];
 };
 
 const SearchResultsPage = () => {
@@ -44,76 +34,100 @@ const SearchResultsPage = () => {
   const [currentPage, setCurrentPage] = useState(
     () => Number(searchParams.get('page')) || 1,
   );
-  const [query, setQuery] = useState(() => searchParams.get('query') || '');
 
-  console.log('SearchResultsPage rendered with state:', {
-    searchResults,
-    loading,
-    currentPage,
-    query,
-  });
-
+  // トップページ（/search）アクセス時のリセット確認
   useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/search') {
+      console.log('Top page detected, resetting search results.');
+
+      // 履歴の取得
+      const history = getHistory();
+      console.log('Detail history:', history); // Debug print
+
+      // ローカルストレージから検索結果を取得
+      const savedResults =
+        JSON.parse(localStorage.getItem('searchResults')) || [];
+
+      // 履歴に該当するデータを除外して再保存
+      const preservedResults = savedResults.filter((result) =>
+        history.includes(String(result.id)),
+      );
+
+      // ローカルストレージを更新
+      if (preservedResults.length > 0) {
+        localStorage.setItem('searchResults', JSON.stringify(preservedResults));
+      } else {
+        localStorage.removeItem('searchResults'); // 全て削除
+      }
+      setSearchResults([]); // UIも初期化
+    }
+  }, [window.location.pathname]);
+
+  // 検索条件に基づいてAPIからデータを取得
+  useEffect(() => {
+    console.log(
+      'useEffect triggered: Fetching data with params:',
+      searchParams.toString(),
+    ); // Debug print
+
     const fetchData = async () => {
-      console.log('useEffect fetchData called');
+      const title = searchParams.get('title') || '';
+      const artist = searchParams.get('artist') || '';
+      const genre = searchParams.get('genre') || '';
+      const page = searchParams.get('page') || '';
+
+      // 検索条件が全て空の場合はAPIリクエストをスキップ
+      if (searchParams.size === 0) {
+        console.log('No search conditions provided. Skipping API request.'); // Debug print
+        setSearchResults([]); // 結果を空にリセット
+        return;
+      }
+
       setLoading(true);
       try {
-        const title = searchParams.get('title') || '';
-        const artist = searchParams.get('artist') || '';
-        const genre = searchParams.get('genre') || '';
+        console.log(
+          'Fetching data for title:',
+          title,
+          ', artist:',
+          artist,
+          ', genre:',
+          genre,
+        ); // Debug print
         const results = await fetchSearchResults(
-          query,
           currentPage,
           title,
           artist,
           genre,
         );
-        console.log('useEffect fetchData results:', results);
         setSearchResults(results);
+        localStorage.setItem('searchResults', JSON.stringify(results)); // キャッシュ
+        console.log('Search results updated:', results); // Debug print
       } catch (error) {
-        console.error('fetchData error:', error);
+        console.error('API fetch failed:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (query) {
-      fetchData();
-    }
-  }, [currentPage, query, searchParams]);
+    fetchData();
+  }, [currentPage, searchParams]);
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    setSearchParams((prevParams) => {
-      return { ...Object.fromEntries(prevParams), page: newPage };
-    });
-  };
-
+  // 検索の実行
   const handleSearch = useCallback(
     async (title, artist, genre) => {
-      console.log('Updating URL with:', { title, artist, genre });
       setLoading(true);
-      setCurrentPage(1); // 新しい検索クエリの場合、最初のページにリセット
-
-      // 空の値を除外してクエリパラメータを設定
-      const params = {
-        page: 1,
-        title: title || undefined,
-        artist: artist || undefined,
-        genre: genre || undefined,
-      };
-
-      // 空の値を持つプロパティを削除
+      setCurrentPage(1); // 新しい検索では1ページ目にリセット
+      const params = { page: 1, title, artist, genre };
       const filteredParams = Object.fromEntries(
-        Object.entries(params).filter(([_, value]) => value !== undefined),
+        Object.entries(params).filter(([_, value]) => value !== ''),
       );
-
-      setSearchParams(filteredParams); // クエリパラメータを更新
-
+      setSearchParams(filteredParams); // URLパラメータを更新
       try {
+        console.log('Executing handleSearch with:', filteredParams); // Debug print
         const results = await fetchSearchResults(1, title, artist, genre);
-        console.log('handleSearch results:', results);
         setSearchResults(results);
+        localStorage.setItem('searchResults', JSON.stringify(results)); // キャッシュ
       } catch (error) {
         console.error('検索に失敗しました:', error);
       } finally {
@@ -122,6 +136,15 @@ const SearchResultsPage = () => {
     },
     [setSearchParams],
   );
+
+  // ページ切り替え
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    console.log('Page changed to:', newPage); // Debug print
+    setSearchParams((prevParams) => {
+      return { ...Object.fromEntries(prevParams), page: newPage };
+    });
+  };
 
   return (
     <div>

@@ -1,9 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 const SearchBar = ({ handleSearch }) => {
+  const [searchParams] = useSearchParams(); // クエリパラメータを取得  const [title, setTitle] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [genre, setGenre] = useState('');
+
+  useEffect(() => {
+    setTitle(searchParams.get('title') || '');
+    setArtist(searchParams.get('artist') || '');
+    setGenre(searchParams.get('genre') || '');
+  }, []);
 
   const onSearch = useCallback(() => {
     console.log(
