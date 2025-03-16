@@ -11,7 +11,7 @@ const SearchBar = ({ handleSearch }) => {
     setTitle(searchParams.get('title') || '');
     setArtist(searchParams.get('artist') || '');
     setGenre(searchParams.get('genre') || '');
-  }, []);
+  }, [searchParams]);
 
   const onSearch = useCallback(() => {
     console.log(
